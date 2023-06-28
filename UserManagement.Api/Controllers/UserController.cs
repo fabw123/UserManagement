@@ -10,9 +10,9 @@ namespace UserManagement.Api.Controllers
     public class UserController : ControllerBase
     {
 
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
-        public UserController(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
+        public UserController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -27,8 +27,11 @@ namespace UserManagement.Api.Controllers
         [HttpPost("user")]
         public async Task<IActionResult> CreateUser([FromBody]RegisterUser registerUser) 
         {
-            var userIdentity = new IdentityUser()
+            var userIdentity = new ApplicationUser()
             {
+                FirstName = registerUser.FirstName,
+                LastName = registerUser.LastName,
+                BirthDate = registerUser.BirthDate,
                 UserName = registerUser.UserName,
                 Email = registerUser.Email,
                 ConcurrencyStamp = Guid.NewGuid().ToString()
