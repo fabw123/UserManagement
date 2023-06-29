@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using UserManagement.Api.EntityFramework;
 using UserManagement.Api.Models;
+using UserManagement.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,8 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddDefaultTokenProviders();
 builder.Services.Configure<IdentityOptions>(options =>
 {
+    options.SignIn.RequireConfirmedEmail = true;
+
     options.Password.RequireDigit = true;
     options.Password.RequiredLength = 10;
     options.Password.RequireNonAlphanumeric = false;
@@ -23,7 +26,9 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Password.RequireLowercase= true;
 });
 
-
+//Email configuration
+builder.Services.Configure<EmailConfiguration>(builder.Configuration.GetSection("EmailConfiguration"));
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 
 //Add Authentication

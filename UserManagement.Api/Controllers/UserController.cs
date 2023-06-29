@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using UserManagement.Api.Models;
+using UserManagement.Api.Services;
 
 namespace UserManagement.Api.Controllers
 {
@@ -12,10 +13,14 @@ namespace UserManagement.Api.Controllers
 
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
-        public UserController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+        private readonly IEmailService _emailService;
+        public UserController(UserManager<ApplicationUser> userManager, 
+            RoleManager<IdentityRole> roleManager, 
+            IEmailService emailService)
         {
             _userManager = userManager;
             _roleManager = roleManager;
+            _emailService = emailService;
         }
 
         [HttpGet("Status")]
@@ -40,6 +45,8 @@ namespace UserManagement.Api.Controllers
             var result = await _userManager.CreateAsync(userIdentity, registerUser.Password);
             if (result.Succeeded)
             {
+                await SendVerificationEmail(userIdentity);
+
                 return StatusCode(StatusCodes.Status200OK,
                     new { Message = "User created successfully" });
             }
@@ -78,6 +85,44 @@ namespace UserManagement.Api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     new { Message = "Error creating the user", Errors = result.Errors });
             }
+        }
+
+        [HttpGet("confirmEmail")]
+        public async Task<IActionResult> ConfirmEmail(string token, string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user is null)
+            {
+                return StatusCode(StatusCodes.Status404NotFound, new { Message = $"User email not found: {email}" });
+            }
+            var result = await _userManager.ConfirmEmailAsync(user, token);
+            if (result.Succeeded)
+            {
+                return StatusCode(StatusCodes.Status200OK,
+                    new { Message = "User Email was confirmed" });
+            }
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { Message = "Error confirming the user ", Errors = result.Errors });
+        }
+
+        private async Task SendVerificationEmail(ApplicationUser user)
+        {
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var confirmationLink = Url.Action(nameof(ConfirmEmail), "User", new {Token = token, Email = user.Email}, Request.Scheme);
+            var messageContent = $"Hello,\n You created an account in our system, please confirm your account through this link\n {confirmationLink} \n Regards, User Management Team";
+            var message = new EmailMessage("User Management - Confirmation Email", messageContent, new List<string> { user.Email });
+            _emailService.SendEmail(message);
+        }
+
+        [HttpPost("email/{keyValue}")]
+        public IActionResult TestEmail(string keyValue)
+        {
+            var message = new EmailMessage("Email Test",
+                $"This is the content for email test: {keyValue}",
+                new List<string>() { "fabwpp@hotmail.com" });
+            _emailService.SendEmail(message);
+
+            return Ok("Email Sent successfully");
         }
 
     }
