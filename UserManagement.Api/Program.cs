@@ -28,6 +28,7 @@ builder.Services.Configure<IdentityOptions>(options =>
 
 //Email configuration
 builder.Services.Configure<EmailConfiguration>(builder.Configuration.GetSection("EmailConfiguration"));
+builder.Services.Configure<JwtConfiguration>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 

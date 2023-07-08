@@ -1,5 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using UserManagement.Api.Models;
 using UserManagement.Api.Services;
 
@@ -14,13 +19,16 @@ namespace UserManagement.Api.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IEmailService _emailService;
-        public UserController(UserManager<ApplicationUser> userManager, 
-            RoleManager<IdentityRole> roleManager, 
-            IEmailService emailService)
+        private readonly JwtConfiguration _jwtConfiguration;
+        public UserController(UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager,
+            IEmailService emailService,
+            IOptions<JwtConfiguration> jwtConfiguration)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _emailService = emailService;
+            _jwtConfiguration = jwtConfiguration.Value;
         }
 
         [HttpGet("Status")]
@@ -55,6 +63,39 @@ namespace UserManagement.Api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     new { Message = "Error creating the user", Errors = result.Errors });
             }
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> LoginUser([FromBody] LoginUser loginUser)
+        {
+            var user = await _userManager.FindByNameAsync(loginUser.UserName);
+            if (user is null || !(await _userManager.CheckPasswordAsync(user, loginUser.Password)))
+            {
+                return StatusCode(StatusCodes.Status401Unauthorized,
+                    new { Message = "User name or Password incorrect" });
+            }
+
+            var authClaims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var userRoles = await _userManager.GetRolesAsync(user);
+            foreach (var role in userRoles)
+            {
+                authClaims.Add(new Claim(ClaimTypes.Role,role));
+            }
+
+            var jwtToken = GetToken(authClaims);
+
+            return Ok(new
+            {
+                Token = new JwtSecurityTokenHandler().WriteToken(jwtToken),
+                ExpirationDate = jwtToken.ValidTo
+            });
+
         }
 
         [HttpPost("user/role")]
@@ -113,6 +154,20 @@ namespace UserManagement.Api.Controllers
             var message = new EmailMessage("User Management - Confirmation Email", messageContent, new List<string> { user.Email });
             _emailService.SendEmail(message);
         }
+
+        private JwtSecurityToken GetToken(IEnumerable<Claim> claims) 
+        {
+            var authSingingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtConfiguration.Secret));
+            var token = new JwtSecurityToken(
+                issuer: _jwtConfiguration.Issuer,
+                audience: _jwtConfiguration.Audience,
+                claims: claims,
+                expires: DateTime.Now.AddHours(1),
+                signingCredentials: new SigningCredentials(authSingingKey, SecurityAlgorithms.HmacSha256));
+            
+            return token;
+        }
+
 
         [HttpPost("email/{keyValue}")]
         public IActionResult TestEmail(string keyValue)
