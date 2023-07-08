@@ -19,17 +19,20 @@ namespace UserManagement.Api.Controllers
 
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IEmailService _emailService;
         private readonly JwtConfiguration _jwtConfiguration;
         public UserController(UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
             IEmailService emailService,
-            IOptions<JwtConfiguration> jwtConfiguration)
+            IOptions<JwtConfiguration> jwtConfiguration,
+            SignInManager<ApplicationUser> signInManager)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _emailService = emailService;
             _jwtConfiguration = jwtConfiguration.Value;
+            _signInManager = signInManager;
         }
 
         [HttpGet("Status")]
@@ -56,6 +59,7 @@ namespace UserManagement.Api.Controllers
                 BirthDate = registerUser.BirthDate,
                 UserName = registerUser.UserName,
                 Email = registerUser.Email,
+                TwoFactorEnabled = true,
                 ConcurrencyStamp = Guid.NewGuid().ToString()
             };
 
@@ -84,20 +88,18 @@ namespace UserManagement.Api.Controllers
                     new { Message = "User name or Password incorrect" });
             }
 
-            var authClaims = new List<Claim>
+            if (user.TwoFactorEnabled)
             {
-                new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
+                await _signInManager.SignOutAsync();
+                await _signInManager.PasswordSignInAsync(user, loginUser.Password, false, true);
+                await SendOTPEmail(user);
 
-            var userRoles = await _userManager.GetRolesAsync(user);
-            foreach (var role in userRoles)
-            {
-                authClaims.Add(new Claim(ClaimTypes.Role,role));
+                return StatusCode(StatusCodes.Status200OK,
+                    new { Message = $"Login successfull. We have sent an email to {user.Email}" });
             }
 
-            var jwtToken = GetToken(authClaims);
+
+            var jwtToken = await GetToken(user);
 
             return Ok(new
             {
@@ -105,6 +107,25 @@ namespace UserManagement.Api.Controllers
                 ExpirationDate = jwtToken.ValidTo
             });
 
+        }
+
+        [HttpPost("loginotp")]
+        public async Task<IActionResult> LoginUserOtp(string userName,string loginCode)
+        {
+            var user = await _userManager.FindByNameAsync(userName);
+            var signin = await _signInManager.TwoFactorSignInAsync("Email", loginCode, false, false);
+            if (signin.Succeeded && user is not null)
+            {
+                var jwtToken = await GetToken(user);
+
+                return Ok(new
+                {
+                    Token = new JwtSecurityTokenHandler().WriteToken(jwtToken),
+                    ExpirationDate = jwtToken.ValidTo
+                });
+            }
+            return StatusCode(StatusCodes.Status401Unauthorized,
+                    new { Message = "User name or Password incorrect" });
         }
 
         [HttpPost("user/role")]
@@ -164,13 +185,34 @@ namespace UserManagement.Api.Controllers
             _emailService.SendEmail(message);
         }
 
-        private JwtSecurityToken GetToken(IEnumerable<Claim> claims) 
+        private async Task SendOTPEmail(ApplicationUser user)
         {
+            var token = await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
+            var messageContent = $"Hello,\n Plase use the following code to login in the system\n {token} \n Regards, User Management Team";
+            var message = new EmailMessage("User Management - Confirmation Code", messageContent, new List<string> { user.Email });
+            _emailService.SendEmail(message);
+        }
+
+        private async Task<JwtSecurityToken> GetToken(ApplicationUser user) 
+        {
+            var authClaims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var userRoles = await _userManager.GetRolesAsync(user);
+            foreach (var role in userRoles)
+            {
+                authClaims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
             var authSingingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtConfiguration.Secret));
             var token = new JwtSecurityToken(
                 issuer: _jwtConfiguration.Issuer,
                 audience: _jwtConfiguration.Audience,
-                claims: claims,
+                claims: authClaims,
                 expires: DateTime.Now.AddHours(1),
                 signingCredentials: new SigningCredentials(authSingingKey, SecurityAlgorithms.HmacSha256));
             
