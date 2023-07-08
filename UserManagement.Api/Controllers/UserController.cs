@@ -46,7 +46,8 @@ namespace UserManagement.Api.Controllers
         public IActionResult GetUsers()
         {
             var users = _userManager.Users.ToList();
-            return Ok(users);
+            var response = users.Select(x => (UserResponse)x).ToList();
+            return Ok(response);
         }
 
         [HttpPost("user")]
@@ -217,18 +218,6 @@ namespace UserManagement.Api.Controllers
                 signingCredentials: new SigningCredentials(authSingingKey, SecurityAlgorithms.HmacSha256));
             
             return token;
-        }
-
-        
-        [HttpPost("email/{keyValue}")]
-        public IActionResult TestEmail(string keyValue)
-        {
-            var message = new EmailMessage("Email Test",
-                $"This is the content for email test: {keyValue}",
-                new List<string>() { "fabwpp@hotmail.com" });
-            _emailService.SendEmail(message);
-
-            return Ok("Email Sent successfully");
         }
 
     }
