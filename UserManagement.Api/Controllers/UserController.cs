@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -35,6 +36,14 @@ namespace UserManagement.Api.Controllers
         public IActionResult Index()
         {
             return Ok("Sistem is OK!");
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet]
+        public IActionResult GetUsers()
+        {
+            var users = _userManager.Users.ToList();
+            return Ok(users);
         }
 
         [HttpPost("user")]
@@ -168,7 +177,7 @@ namespace UserManagement.Api.Controllers
             return token;
         }
 
-
+        
         [HttpPost("email/{keyValue}")]
         public IActionResult TestEmail(string keyValue)
         {
