@@ -18,5 +18,11 @@ namespace UserManagement.Api.Models
             To = new List<MailboxAddress>();
             To.AddRange(to.Select(x => new MailboxAddress("email", x)));
         }
+
+        public EmailMessage(string subject, string content, string to) 
+            : this(subject, content, new List<string> { to })
+        {
+            
+        }
     }
 }

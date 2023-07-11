@@ -7,6 +7,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using UserManagement.Api.Models;
+using UserManagement.Api.Models.Requests;
 using UserManagement.Api.Services;
 
 namespace UserManagement.Api.Controllers
@@ -176,6 +177,63 @@ namespace UserManagement.Api.Controllers
             return StatusCode(StatusCodes.Status500InternalServerError,
                     new { Message = "Error confirming the user ", Errors = result.Errors });
         }
+
+        [Authorize]
+        [HttpPost("password/reset")]
+        public async Task<IActionResult> ResetPassword(string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user is null)
+            {
+                return StatusCode(StatusCodes.Status404NotFound, new
+                {
+                    Message = $"email {email} was not found"
+                });
+            }
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var link = Url.Action(nameof(ForgotPassword), "User", new { token, email = user.Email }, Request.Scheme);
+            var messageContent = $"Hello,\n Please, use the following link to change your password:\n {link} \n Regards, User Management Team";
+            var message = new EmailMessage("User Management - Password Reset Request", messageContent, user.Email);
+            _emailService.SendEmail(message);
+
+            return Ok(new { Message = $"Request succeded. An email have been sent to {user.Email} to continue the process" });
+
+        }
+
+        [Authorize]
+        [HttpGet("password/forgot")]
+        public async Task<IActionResult> ForgotPassword(string email, string token)
+        {
+            return Ok(new {email = email, token = token});
+        }
+
+        [Authorize]
+        [HttpPost("password/forgot")]
+        public async Task<IActionResult> ForgotPassword(ResetPassword resetPassword)
+        {
+            var user = await _userManager.FindByEmailAsync(resetPassword.Email);
+            if (user is null)
+            {
+                return StatusCode(StatusCodes.Status404NotFound, new
+                {
+                    Message = $"email {resetPassword.Email} was not found"
+                });
+            }
+
+            var result = await _userManager.ResetPasswordAsync(user, resetPassword.Token, resetPassword.Password);
+            if (result.Succeeded)
+            {
+                return Ok(new { Message = "Password have been updated" });
+            }
+
+            return StatusCode(StatusCodes.Status400BadRequest, new
+            {
+                Message = $"Error changing the password for {resetPassword.Email}",
+                Errors = result.Errors
+            });
+        }
+
 
         private async Task SendVerificationEmail(ApplicationUser user)
         {
