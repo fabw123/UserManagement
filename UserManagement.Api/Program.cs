@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using UserManagement.Api.EntityFramework;
 using UserManagement.Api.Models;
+using UserManagement.Api.Models.Configuration;
 using UserManagement.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,7 +32,9 @@ builder.Services.Configure<IdentityOptions>(options =>
 //Email configuration
 builder.Services.Configure<EmailConfiguration>(builder.Configuration.GetSection("EmailConfiguration"));
 builder.Services.Configure<JwtConfiguration>(builder.Configuration.GetSection("Jwt"));
+builder.Services.Configure<SystemConfiguration>(builder.Configuration.GetSection("System"));
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 
 //Add Authentication

@@ -21,5 +21,20 @@ namespace UserManagement.Api.Models
         public string Password { get; set; }
 
         public DateTime BirthDate { get; set; }
+
+        public static explicit operator ApplicationUser(RegisterUser registerUser)
+        {
+            var userIdentity = new ApplicationUser()
+            {
+                FirstName = registerUser.FirstName,
+                LastName = registerUser.LastName,
+                BirthDate = registerUser.BirthDate,
+                UserName = registerUser.UserName,
+                Email = registerUser.Email,
+                TwoFactorEnabled = true,
+                ConcurrencyStamp = Guid.NewGuid().ToString()
+            };
+            return userIdentity;
+        }
     }
 }
