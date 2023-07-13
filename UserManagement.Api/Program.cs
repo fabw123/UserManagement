@@ -1,4 +1,6 @@
+using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -13,6 +15,10 @@ var builder = WebApplication.CreateBuilder(args);
 // EntityFramework
 var configuration = builder.Configuration;
 builder.Services.AddDbContext<UserManagementDbContext>(options => options.UseSqlServer(configuration.GetConnectionString("Local")));
+
+//HealthCheks
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<UserManagementDbContext>();
 
 //Add Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
@@ -76,7 +82,10 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.MapHealthChecks("/Health", new HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
 app.MapControllers();
 
 app.Run();

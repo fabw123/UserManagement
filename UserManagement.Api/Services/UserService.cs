@@ -23,6 +23,7 @@ namespace UserManagement.Api.Services
 
         private readonly SystemConfiguration _systemConfiguration;
         private readonly JwtConfiguration _jwtConfiguration;
+        
         public UserService(UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
             SignInManager<ApplicationUser> signInManager,
@@ -52,7 +53,6 @@ namespace UserManagement.Api.Services
             if (result.Succeeded)
             {
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                //var confirmationLink = Url.Action(nameof(ConfirmEmail), "User", new { Token = token, Email = user.Email }, Request.Scheme);
                 var confirmationLink = $"{_systemConfiguration.Url}/user/confirmEmail?token={token}&email={user.Email}";
                 var messageContent = $"Hello,\n You created an account in our system, please confirm your account through this link\n {confirmationLink} \n Regards, User Management Team";
                 var message = new EmailMessage("User Management - Confirmation Email", messageContent, user.Email);
