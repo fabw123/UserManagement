@@ -11,10 +11,21 @@ using UserManagement.Api.Models.Configuration;
 using UserManagement.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+var configuration = builder.Configuration;
 
 // EntityFramework
-var configuration = builder.Configuration;
 builder.Services.AddDbContext<UserManagementDbContext>(options => options.UseSqlServer(configuration.GetConnectionString("Local")));
+
+//CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy", pb =>
+    {
+        pb.WithOrigins("htpp://localhost:6000")
+        .WithMethods("GET", "POST", "PUT", "DELETE")
+        .AllowAnyHeader();
+    });
+});
 
 //HealthCheks
 builder.Services.AddHealthChecks()
@@ -79,7 +90,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+app.UseCors("CorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapHealthChecks("/Health", new HealthCheckOptions
