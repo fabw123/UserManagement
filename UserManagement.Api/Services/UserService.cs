@@ -20,16 +20,18 @@ namespace UserManagement.Api.Services
         private readonly SignInManager<ApplicationUser> _signInManager;
 
         private readonly IEmailService _emailService;
+        private readonly ILogger<UserService> _logger;
 
         private readonly SystemConfiguration _systemConfiguration;
         private readonly JwtConfiguration _jwtConfiguration;
-        
+
         public UserService(UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
             SignInManager<ApplicationUser> signInManager,
             IEmailService emailService,
             IOptions<SystemConfiguration> systemConfiguration,
-            IOptions<JwtConfiguration> jwtConfiguration)
+            IOptions<JwtConfiguration> jwtConfiguration,
+            ILogger<UserService> logger)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -37,6 +39,7 @@ namespace UserManagement.Api.Services
             _emailService = emailService;
             _systemConfiguration = systemConfiguration.Value;
             _jwtConfiguration = jwtConfiguration.Value;
+            _logger = logger;
         }
 
         public IEnumerable<UserResponse> GetUsers()
@@ -66,6 +69,7 @@ namespace UserManagement.Api.Services
             var user = await _userManager.FindByNameAsync(loginUser.UserName);
             if (user is null || !(await _userManager.CheckPasswordAsync(user, loginUser.Password)))
             {
+                _logger.LogWarning("Login failed for user {userName}", loginUser.UserName);
                 return new StatusResult(StatusCodes.Status404NotFound, new { Message = $"Login failed. please check username and password" });
             }
 
@@ -78,9 +82,11 @@ namespace UserManagement.Api.Services
                 var message = new EmailMessage("User Management - Confirmation Code", messageContent, user.Email);
                 _emailService.SendEmail(message);
 
+                _logger.LogInformation("Email with Login code was sent to {email}", user.Email);
                 return new StatusResult(StatusCodes.Status200OK, new { Message = $"Login successfull. We have sent an email to {user.Email}" });
             }
 
+            _logger.LogWarning("The user {userName} logged in without OTP", loginUser.UserName);
             var jwtToken = await GetToken(user);
             return new StatusResult(StatusCodes.Status200OK, new
             {
@@ -103,6 +109,7 @@ namespace UserManagement.Api.Services
                 });
 
             }
+            _logger.LogInformation("User {userName} has been logged in", userName);
             return new StatusResult(StatusCodes.Status401Unauthorized, new { Message = "User name or Password incorrect" });
         }
 
@@ -124,7 +131,10 @@ namespace UserManagement.Api.Services
             if (result.Succeeded)
             {
                 return new StatusResult(StatusCodes.Status200OK, new { Message = $"User {bindUserRole.UserName}  has been associated to role {bindUserRole.RoleName}" });
+                _logger.LogInformation("User {userName} has been assigned to the role {role}", bindUserRole.UserName, bindUserRole.RoleName);
             }
+
+            
             return new StatusResult(StatusCodes.Status500InternalServerError,
                 new { Message = "Error creating the user", Errors = result.Errors });
         }
