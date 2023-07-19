@@ -50,6 +50,7 @@ builder.Services.Configure<IdentityOptions>(options =>
 builder.Services.Configure<EmailConfiguration>(builder.Configuration.GetSection("EmailConfiguration"));
 builder.Services.Configure<JwtConfiguration>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<SystemConfiguration>(builder.Configuration.GetSection("System"));
+builder.Services.Configure<GoogleAuthenticationConfiguration>(builder.Configuration.GetSection("GoogleAuthentication"));
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
@@ -72,6 +73,11 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]))
     };
+})
+.AddGoogle(options =>
+{
+    options.ClientId = configuration["GoogleAuthentication:ClientId"];
+    options.ClientSecret = configuration["GoogleAuthentication:SecretId"];
 });
 
 

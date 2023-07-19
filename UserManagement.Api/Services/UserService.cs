@@ -130,8 +130,8 @@ namespace UserManagement.Api.Services
             var result = await _userManager.AddToRoleAsync(user, bindUserRole.RoleName);
             if (result.Succeeded)
             {
-                return new StatusResult(StatusCodes.Status200OK, new { Message = $"User {bindUserRole.UserName}  has been associated to role {bindUserRole.RoleName}" });
                 _logger.LogInformation("User {userName} has been assigned to the role {role}", bindUserRole.UserName, bindUserRole.RoleName);
+                return new StatusResult(StatusCodes.Status200OK, new { Message = $"User {bindUserRole.UserName}  has been associated to role {bindUserRole.RoleName}" });
             }
 
             

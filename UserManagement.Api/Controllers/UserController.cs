@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -68,6 +70,21 @@ namespace UserManagement.Api.Controllers
             return StatusCode(result.StatusCode,result.Value);
         }
 
+        [HttpPost("login/google")]
+        public async Task LoginGoogle()
+        {
+            await HttpContext.ChallengeAsync(GoogleDefaults.AuthenticationScheme, new AuthenticationProperties()
+            {
+                RedirectUri = Url.Action("GoogleResponse")
+            });
+        }
+
+        [HttpGet("google/response")]
+        public IActionResult GoogleResponse()
+        {
+            return StatusCode(StatusCodes.Status200OK, new { Message = "Logged in with Google"});
+        }
+
         [HttpPost("role")]
         public async Task<IActionResult> BindUserToRole([FromBody] BindUserRole bindUserRole)
         {
@@ -92,7 +109,7 @@ namespace UserManagement.Api.Controllers
 
         [Authorize]
         [HttpGet("password/reset")]
-        public async Task<IActionResult> ResetPassword(string email, string token)
+        public IActionResult ResetPassword(string email, string token)
         {
             return Ok(new {email = email, token = token});
         }

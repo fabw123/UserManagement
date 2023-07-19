@@ -9,9 +9,12 @@ namespace UserManagement.Api.Services
     public class EmailService : IEmailService
     {
         private readonly EmailConfiguration _emailConfiguration;
-        public EmailService(IOptions<EmailConfiguration> emailConfiguration)
+        private readonly ILogger<EmailService> _logger;
+        public EmailService(IOptions<EmailConfiguration> emailConfiguration, 
+            ILogger<EmailService> logger)
         {
             _emailConfiguration = emailConfiguration.Value;
+            _logger = logger;
         }
 
         public void SendEmail(EmailMessage emailMessage)
@@ -28,6 +31,7 @@ namespace UserManagement.Api.Services
             }
             catch (Exception ex)
             {
+                _logger.LogError("An exception ocurred trying to send the email to {email}: {ex}",emailMessage.To,ex);
                 throw;
             }
         }
