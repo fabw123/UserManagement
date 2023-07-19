@@ -80,6 +80,10 @@ builder.Services.AddAuthentication(options =>
     options.ClientSecret = configuration["GoogleAuthentication:SecretId"];
 });
 
+builder.Services.AddLogging(builder =>
+{
+    builder.AddSeq();
+});
 
 
 builder.Services.AddControllers();
