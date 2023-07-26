@@ -73,16 +73,11 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]))
     };
-})
-.AddGoogle(options =>
-{
-    options.ClientId = configuration["GoogleAuthentication:ClientId"];
-    options.ClientSecret = configuration["GoogleAuthentication:SecretId"];
 });
 
-builder.Services.AddLogging(builder =>
+builder.Services.AddLogging(logBuilder =>
 {
-    builder.AddSeq();
+    logBuilder.AddSeq(builder.Configuration["Seq:ServerUrl"], builder.Configuration["Seq:ApiKey"]);
 });
 
 
@@ -103,6 +98,15 @@ if (app.Environment.IsDevelopment())
 app.UseCors("CorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
+
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<UserManagementDbContext>();
+    context.Database.Migrate();
+}
+
 app.MapHealthChecks("/Health", new HealthCheckOptions
 {
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse

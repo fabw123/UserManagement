@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+
+    sqldatabase:
+        container_name: sqldatabase
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        ports: 
+            - 1433:1433
+        environment:
+            - ACCEPT_EULA=Y
+            - MSSQL_SA_PASSWORD=yourStrong(!)Password
+            
+    seq:
+        container_name: seq
+        image: datalust/seq:latest
+        restart: unless-stopped
+        ports: 
+            - 5341:80
+        environment:
+            - ACCEPT_EULA=Y
+    
+    user_management:
+        container_name: user_management
+        build:
+            dockerfile: Dockerfile
+        ports: 
+            - 8001:80
+        depends_on:
+            - "sqldatabase"
+            - "seq"
+        environment:
+            - ASPNETCORE__URLS=http://+:8000
+            - ConnectionStrings__Local=Server=host.docker.internal,1433;Database=UserManagement;Persist Security Info=True;User ID=sa;Password=yourStrong(!)Password;TrustServerCertificate=True
+            - EmailConfiguration__From=devfabian844@gmail.com
+            - EmailConfiguration__ServerAddress=smtp.gmail.com
+            - EmailConfiguration__UserName=devfabian844@gmail.com
+            - EmailConfiguration__Password=rwemcgpzawmewzsi
+            - EmailConfiguration__Port=587
+            - Jwt__Audience=http://localhost:8001
+            - Jwt__Issuer=http://localhost:8001
+            - Jwt__Secret=g6blC37YSn/UzFSR_$I[0G?@}=-]N2
+            - GoogleAuthentication__ClientId=401012999191-25aplhdmm2qoadqh5nem0ksd5vnn08pq.apps.googleusercontent.com
+            - GoogleAuthentication__SecretId=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
+            - Seq__ServerUrl=http://host.docker.internal:5341
+            - Seq__ApiKey=WMCmNZRGFGCiROyL7hXM
+            - Seq__MinimumLevel=Information
+            - Seq__LevelOverride__Microsoft=Information
+            - System__Url=http://localhost:8001

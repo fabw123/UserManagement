@@ -7,6 +7,7 @@ using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Web;
 using UserManagement.Api.Models;
 using UserManagement.Api.Models.Configuration;
 using UserManagement.Api.Models.Requests;
@@ -52,13 +53,14 @@ namespace UserManagement.Api.Services
         public async Task<IdentityResult> CreateUser(RegisterUser registerUser)
         {
             var user = (ApplicationUser)registerUser;
-            var result = await _userManager.CreateAsync(user);
+            var result = await _userManager.CreateAsync(user, registerUser.Password);
             if (result.Succeeded)
             {
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                var confirmationLink = $"{_systemConfiguration.Url}/user/confirmEmail?token={token}&email={user.Email}";
+                var tokenEncoded = HttpUtility.UrlEncode(token);
+                var confirmationLink = $"{_systemConfiguration.Url}/user/confirmEmail?token={tokenEncoded}&email={user.Email}";
                 var messageContent = $"Hello,\n You created an account in our system, please confirm your account through this link\n {confirmationLink} \n Regards, User Management Team";
-                var message = new EmailMessage("User Management - Confirmation Email", messageContent, user.Email);
+                var message = new EmailMessage("User Management - Confirmation Email", messageContent, new List<string> { user.Email });
                 _emailService.SendEmail(message);
             }
             return result;
@@ -102,6 +104,7 @@ namespace UserManagement.Api.Services
             if (signin.Succeeded && user is not null)
             {
                 var jwtToken = await GetToken(user);
+                _logger.LogInformation("User {userName} has been logged in", userName);
                 return new StatusResult(StatusCodes.Status200OK, new
                 {
                     Token = new JwtSecurityTokenHandler().WriteToken(jwtToken),
@@ -109,7 +112,6 @@ namespace UserManagement.Api.Services
                 });
 
             }
-            _logger.LogInformation("User {userName} has been logged in", userName);
             return new StatusResult(StatusCodes.Status401Unauthorized, new { Message = "User name or Password incorrect" });
         }
 
@@ -163,7 +165,8 @@ namespace UserManagement.Api.Services
             }
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            var link = $"{_systemConfiguration.Url}/user/password/forgot?token={token}&email={user.Email}";
+            var tokenEncoded = HttpUtility.UrlEncode(token);
+            var link = $"{_systemConfiguration.Url}/user/password/forgot?token={tokenEncoded}&email={user.Email}";
             var messageContent = $"Hello,\n Please, use the following link to change your password:\n {link} \n Regards, User Management Team";
             var message = new EmailMessage("User Management - Password Reset Request", messageContent, user.Email);
             _emailService.SendEmail(message);
