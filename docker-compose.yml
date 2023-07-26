@@ -41,7 +41,7 @@ services:
             - Jwt__Issuer=http://localhost:8001
             - Jwt__Secret=g6blC37YSn/UzFSR_$I[0G?@}=-]N2
             - GoogleAuthentication__ClientId=401012999191-25aplhdmm2qoadqh5nem0ksd5vnn08pq.apps.googleusercontent.com
-            - GoogleAuthentication__SecretId=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
+            - GoogleAuthentication__SecretId=
             - Seq__ServerUrl=http://host.docker.internal:5341
             - Seq__ApiKey=WMCmNZRGFGCiROyL7hXM
             - Seq__MinimumLevel=Information
