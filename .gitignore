@@ -396,3 +396,10 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# docker volumes
+sql_volume/
+volume/
+
+/.env
+/.noss-env

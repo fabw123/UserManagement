@@ -4,7 +4,7 @@ services:
 
  sqldatabase:
   container_name: sqldatabase
-  image: mcr.microsoft.com/mssql/server:2022-latest
+  image: localhost:8084/mssql/server:2022-latest
   restart: unless-stopped
   ports: 
    - 1433:1433
