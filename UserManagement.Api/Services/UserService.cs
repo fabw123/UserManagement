@@ -58,7 +58,7 @@ namespace UserManagement.Api.Services
             {
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                 var tokenEncoded = HttpUtility.UrlEncode(token);
-                var confirmationLink = $"{_systemConfiguration.Url}/user/confirmEmail?token={tokenEncoded}&email={user.Email}";
+                var confirmationLink = $"{_systemConfiguration.ApiUrl}/user/confirmEmail?token={tokenEncoded}&email={user.Email}";
                 var messageContent = $"Hello,\n You created an account in our system, please confirm your account through this link\n {confirmationLink} \n Regards, User Management Team";
                 var message = new EmailMessage("User Management - Confirmation Email", messageContent, new List<string> { user.Email });
                 _emailService.SendEmail(message);
@@ -166,7 +166,7 @@ namespace UserManagement.Api.Services
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
             var tokenEncoded = HttpUtility.UrlEncode(token);
-            var link = $"{_systemConfiguration.Url}/user/password/forgot?token={tokenEncoded}&email={user.Email}";
+            var link = $"{_systemConfiguration.ApiUrl}/user/password/forgot?token={tokenEncoded}&email={user.Email}";
             var messageContent = $"Hello,\n Please, use the following link to change your password:\n {link} \n Regards, User Management Team";
             var message = new EmailMessage("User Management - Password Reset Request", messageContent, user.Email);
             _emailService.SendEmail(message);

@@ -9,6 +9,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using UserManagement.Api.Models;
+using UserManagement.Api.Models.Configuration;
 using UserManagement.Api.Models.Requests;
 using UserManagement.Api.Services;
 
@@ -20,10 +21,12 @@ namespace UserManagement.Api.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly SystemConfiguration _systemConfiguration;
 
-        public UserController(IUserService userService)
+        public UserController(IUserService userService, IOptions<SystemConfiguration> systemConfiguration)
         {
             _userService = userService;
+            _systemConfiguration = systemConfiguration.Value;
         }
 
         [HttpGet("Status")]
@@ -32,7 +35,7 @@ namespace UserManagement.Api.Controllers
             return Ok("Sistem is OK!");
         }
 
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpGet]
         public IActionResult GetUsers()
         {
@@ -75,7 +78,7 @@ namespace UserManagement.Api.Controllers
         {
             await HttpContext.ChallengeAsync(GoogleDefaults.AuthenticationScheme, new AuthenticationProperties()
             {
-                RedirectUri = Url.Action("GoogleResponse")
+                RedirectUri = $"{_systemConfiguration.WebUrl}/fetchdata"
             });
         }
 

@@ -1,0 +1,37 @@
+﻿@page "/users"
+@inherits UserBase
+<h3>User</h3>
+
+@if (Users is null)
+{
+    <h3>Loading users...</h3>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <td>Id</td>
+                <td>First Name</td>
+                <td>Last Name</td>
+                <td>User Name</td>
+                <td>Email</td>
+                <td>Birth Date</td>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Users)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.FirstName</td>
+                    <td>@item.LastName</td>
+                    <td>@item.UserName</td>
+                    <td>@item.Email</td>
+                    <td>@item.BirthDate</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+}

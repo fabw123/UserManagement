@@ -21,7 +21,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", pb =>
     {
-        pb.WithOrigins("htpp://localhost:6000")
+        pb.WithOrigins("http://localhost:5084")
         .WithMethods("GET", "POST", "PUT", "DELETE")
         .AllowAnyHeader();
     });
@@ -73,7 +73,13 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]))
     };
+}).AddGoogle(opt =>
+{
+    opt.ClientId = builder.Configuration["GoogleAuthentication:ClientId"];
+    opt.ClientSecret = builder.Configuration["GoogleAuthentication:SecretId"];
 });
+
+
 
 builder.Services.AddLogging(logBuilder =>
 {
