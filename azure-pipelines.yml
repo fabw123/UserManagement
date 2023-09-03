@@ -5,10 +5,6 @@
 trigger:
 - master
 
-pool:
-  name: 'default'
-  vmImage: 'selfhostedagent'
-
 resources:
 - repo: self
 
@@ -21,8 +17,7 @@ stages:
   jobs:
   - job: Build
     displayName: Build
-    pool:
-      vmImage: ubuntu-latest
+    pool: Default
     steps:
     - task: Docker@2
       displayName: Build an image
