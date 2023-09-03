@@ -5,6 +5,10 @@
 trigger:
 - master
 
+pool:
+  name: 'default'
+  vmImage: 'selfhostedagent'
+
 resources:
 - repo: self
 
