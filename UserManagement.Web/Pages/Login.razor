@@ -1,0 +1,19 @@
+﻿@page "/login"
+@inject NavigationManager _navigationManager;
+@inject HttpClient _httpClient;
+
+<PageTitle>Login</PageTitle>
+
+<h1>Login</h1>
+
+
+<button class="btn btn-primary" @onclick="IncrementCount">Login with Google</button>
+
+@code {
+
+    private void IncrementCount()
+    {
+        //_navigationManager.NavigateTo("user/login/google",true);
+        _httpClient.GetAsync("http://localhost:7058/user/login/google");
+    }
+}

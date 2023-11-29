@@ -73,12 +73,12 @@ namespace UserManagement.Api.Controllers
             return StatusCode(result.StatusCode,result.Value);
         }
 
-        [HttpPost("login/google")]
+        [HttpGet("login/google")]
         public async Task LoginGoogle()
         {
             await HttpContext.ChallengeAsync(GoogleDefaults.AuthenticationScheme, new AuthenticationProperties()
             {
-                RedirectUri = $"{_systemConfiguration.WebUrl}/fetchdata"
+                RedirectUri = $"{_systemConfiguration.WebUrl}/Users"
             });
         }
 
